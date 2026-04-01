@@ -4,7 +4,7 @@ local LogService = game:GetService("LogService")
 local Players = game:GetService("Players")
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "VisualExePotassium"
+screenGui.Name = "VisualExe"
 screenGui.Parent = game:GetService("CoreGui")
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -78,23 +78,13 @@ injectBtn.Parent = topBar
 addCorner(injectBtn, 6)
 addStroke(injectBtn, accentColor, 1)
 
-local hubBtn = Instance.new("TextButton")
-hubBtn.Size = UDim2.new(0, 80, 0, 26)
-hubBtn.Position = UDim2.new(1, -215, 0, 7)
-hubBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-hubBtn.Text, hubBtn.TextColor3 = "SCRIPTS", Color3.fromRGB(200, 200, 200)
-hubBtn.Font, hubBtn.TextSize, hubBtn.ZIndex = Enum.Font.GothamBold, 10, 13
-hubBtn.Parent = topBar
-addCorner(hubBtn, 6)
-addStroke(hubBtn, Color3.fromRGB(60, 60, 60), 1)
-
 local textBox = Instance.new("TextBox")
 textBox.Size = UDim2.new(0, 420, 0, 230)
 textBox.Position = UDim2.new(0, 130, 0, 50)
 textBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.ZIndex = 11
-textBox.Text, textBox.PlaceholderText = "", "Waiting for code..."
+textBox.Text, textBox.PlaceholderText = "", "Enter code..."
 textBox.MultiLine, textBox.Font, textBox.TextSize = true, Enum.Font.Code, 12
 textBox.TextXAlignment, textBox.TextYAlignment = Enum.TextXAlignment.Left, Enum.TextYAlignment.Top
 textBox.Parent = frame
@@ -109,7 +99,6 @@ terminalFrame.ZIndex = 11
 terminalFrame.ScrollBarThickness = 2
 terminalFrame.Parent = frame
 addCorner(terminalFrame, 8)
-addStroke(terminalFrame, Color3.fromRGB(30, 30, 30), 1)
 local termLayout = Instance.new("UIListLayout", terminalFrame)
 
 local function addToTerminal(msg, color)
@@ -177,23 +166,47 @@ local function switchTab(id)
     textBox.Text = tabs[id].content
     for i, v in pairs(tabs) do
         v.btn.BackgroundColor3 = (i == id and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(20, 20, 20))
-        v.btn.UIStroke.Color = (i == id and accentColor or Color3.fromRGB(50, 50, 50))
+        v.stroke.Color = (i == id and accentColor or Color3.fromRGB(50, 50, 50))
     end
 end
 
 local function createTab()
     local id = tostring(tick())
+    local tabFrame = Instance.new("Frame")
+    tabFrame.Size = UDim2.new(1, 0, 0, 30)
+    tabFrame.BackgroundTransparency = 1
+    tabFrame.Parent = tabList
+
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 30)
+    btn.Size = UDim2.new(1, 0, 1, 0)
     btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    btn.Text = "  Script " .. (#tabList:GetChildren() - 1)
+    btn.Text = "  Script"
     btn.TextColor3, btn.ZIndex = Color3.fromRGB(255, 255, 255), 12
-    btn.Font, btn.TextSize, btn.TextXAlignment = Enum.Font.Gotham, 11, Enum.TextXAlignment.Left
-    btn.Parent = tabList
+    btn.Font, btn.TextSize, btn.TextXAlignment = Enum.Font.Gotham, 10, Enum.TextXAlignment.Left
+    btn.Parent = tabFrame
     addCorner(btn, 6)
-    addStroke(btn, Color3.fromRGB(50, 50, 50), 1)
-    tabs[id] = {btn = btn, content = ""}
+    local s = addStroke(btn, Color3.fromRGB(50, 50, 50), 1)
+
+    local delBtn = Instance.new("TextButton")
+    delBtn.Size = UDim2.new(0, 20, 0, 20)
+    delBtn.Position = UDim2.new(1, -25, 0.5, -10)
+    delBtn.BackgroundTransparency = 1
+    delBtn.Text = "x"
+    delBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+    delBtn.Font, delBtn.TextSize, delBtn.ZIndex = Enum.Font.GothamBold, 14, 13
+    delBtn.Parent = tabFrame
+
+    tabs[id] = {btn = btn, stroke = s, content = ""}
+    
     btn.MouseButton1Click:Connect(function() switchTab(id) end)
+    delBtn.MouseButton1Click:Connect(function()
+        tabs[id] = nil
+        tabFrame:Destroy()
+        if currentTabId == id then
+            local nextId = next(tabs)
+            if nextId then switchTab(nextId) else textBox.Text = "" end
+        end
+    end)
     switchTab(id)
 end
 
@@ -211,13 +224,12 @@ addStroke(toggleBtn, accentColor, 1.5)
 injectBtn.MouseButton1Click:Connect(function()
     if not isInjected then
         injectBtn.Text = "WAIT..."
-        task.wait(1)
+        task.wait(0.5)
         isInjected = true
-        title.Text = "VISUAL.EXE <font color='#FFE632'>PRO</font> | Connected"
-        injectBtn.BackgroundColor3 = Color3.fromRGB(255, 230, 50)
-        injectBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        title.Text = "VISUAL.EXE <font color='#FFE632'>PRO</font> | Active"
+        injectBtn.BackgroundColor3 = accentColor
+        injectBtn.TextColor3 = Color3.new(0,0,0)
         injectBtn.Text = "READY"
-        addToTerminal("System Authenticated", accentColor)
     end
 end)
 
@@ -227,7 +239,7 @@ createTab()
 execBtn.MouseButton1Click:Connect(function()
     if isInjected then
         local f, e = loadstring(textBox.Text)
-        if f then task.spawn(f) else addToTerminal("Error: "..e, Color3.fromRGB(255, 100, 100)) end
+        if f then task.spawn(f) else addToTerminal("Error: "..e, Color3.new(1,0,0)) end
     end
 end)
 
